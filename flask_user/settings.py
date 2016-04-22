@@ -85,6 +85,7 @@ def set_default_settings(user_manager, app_config):
     um.unauthorized_endpoint               = sd('USER_UNAUTHORIZED_ENDPOINT',               home_endpoint)
 
     # Set default template files
+    um.index_template                = sd('INDEX_TEMPLATE',  'index.html')
     um.change_password_template      = sd('USER_CHANGE_PASSWORD_TEMPLATE',  'flask_user/change_password.html')
     um.change_username_template      = sd('USER_CHANGE_USERNAME_TEMPLATE',  'flask_user/change_username.html')
     um.forgot_password_template      = sd('USER_FORGOT_PASSWORD_TEMPLATE',  'flask_user/forgot_password.html')

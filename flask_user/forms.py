@@ -5,10 +5,10 @@
     :license: Simplified BSD License, see LICENSE.txt for more details."""
 
 import string
-from flask import current_app
+from flask import current_app, flash
 from flask.ext.login import current_user
 from flask.ext.wtf import Form
-from wtforms import BooleanField, HiddenField, PasswordField, SubmitField, StringField
+from wtforms import BooleanField, HiddenField, PasswordField, SubmitField, StringField, SelectField, DecimalField
 from wtforms import validators, ValidationError
 from .translations import lazy_gettext as _
 
@@ -142,6 +142,32 @@ class ChangeUsernameForm(Form):
         # All is well
         return True
 
+
+class ChangeProfileForm(Form):
+    year = SelectField('Year in school', choices=[(x, x) for x in ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Masters', 'PhD']], default='Freshman', validators=[
+        validators.DataRequired(_('Year is required')),
+    ])
+
+    major = StringField('Major')
+    gpa = DecimalField('Total GPA', places=2)
+
+
+    next = HiddenField()
+    submit = SubmitField('Update profile')
+
+    def validate(self):
+        user_manager = current_app.user_manager
+
+        if self.year.data not in ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Masters', 'PhD']:
+            flash('Invalid year', 'error')
+            return False
+
+        if float(self.gpa.data) >= 4 or float(self.gpa.data) <= 0:
+            flash('GPA must be between 4.00 and 0.00', 'error')
+            return False
+
+        return True
+
 class ForgotPasswordForm(Form):
     email = StringField(_('Your email address'), validators=[
         validators.DataRequired(_('Email address is required')),
@@ -210,7 +236,7 @@ class LoginForm(Form):
             user, user_email = user_manager.find_user_by_email(self.email.data)
 
         # Handle successful authentication
-        if user and user.password and user_manager.verify_password(self.password.data, user):
+        if user and user_manager.verify_password(self.password.data, user):
             return True                         # Successful authentication
 
         # Handle unsuccessful authentication

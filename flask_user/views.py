@@ -5,7 +5,7 @@
     :license: Simplified BSD License, see LICENSE.txt for more details."""
 
 from datetime import datetime
-from flask import current_app, flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for, Markup
 from flask_login import current_user, login_user, logout_user
 try: # Handle Python 2.x and Python 3.x
     from urllib.parse import quote      # Python 3.x
@@ -116,7 +116,7 @@ def change_username():
 
     # Initialize form
     form = user_manager.change_username_form(request.form)
-    form.next.data = request.args.get('next', _endpoint_url(user_manager.after_change_username_endpoint))  # Place ?next query param in next form field
+
 
     # Process valid POST
     if request.method=='POST' and form.validate():
@@ -273,10 +273,11 @@ def logout():
     logout_user()
 
     # Prepare one-time system message
-    flash(_('You have signed out successfully.'), 'success')
+    flash('You have signed out successfully.', 'success')
 
     # Redirect to logout_next endpoint or '/'
     next = request.args.get('next', _endpoint_url(user_manager.after_logout_endpoint))  # Get 'next' query param
+    print('out', next)
     return redirect(next)
 
 
@@ -648,11 +649,47 @@ def unauthorized():
     return redirect(_endpoint_url(user_manager.unauthorized_endpoint))
 
 
+
 @login_required
 @confirm_email_required
 def user_profile():
     user_manager = current_app.user_manager
-    return render_template(user_manager.user_profile_template)
+    db_adapter = user_manager.db_adapter
+
+    user = user_manager.find_user_by_username(current_user.username)
+
+
+    # Initialize form
+    form = user_manager.change_profile_form(request.form)
+    form.next.data = request.args.get('next', _endpoint_url('user.profile'))  # Place ?next query param in next form field
+
+    new_year = form.year.data
+    if user.year:
+        form.year.data = user.year
+    # else:
+    #     form.year.data = 'Freshman'
+
+    new_major = form.major.data
+
+    if user.major:
+        form.major.data = user.major
+
+    new_gpa = form.gpa.data
+    if user.gpa:
+        form.gpa.data = user.gpa
+
+    if request.method=='POST' and form.validate():
+        print('aaaaaaaaaaaaaaaaaaaa' + new_year)
+        form.year.data = new_year
+        form.major.data = new_major
+        form.gpa.data = new_gpa
+
+        db_adapter.update_object(user, year=form.year.data, major=form.major.data, gpa=form.gpa.data)
+        db_adapter.commit()
+        flash('Your profile has been updated', 'success')
+        return redirect(form.next.data)
+
+    return render_template(user_manager.user_profile_template, form=form)
 
 
 def _send_registered_email(user, user_email, require_email_confirmation=True):
@@ -695,7 +732,6 @@ def _send_confirm_email(user, user_email):
         email = user_email.email if user_email else user.email
         flash(_('A confirmation email has been sent to %(email)s with instructions to complete your registration.', email=email), 'success')
 
-
 def _do_login_user(user, next, remember_me=False):
     # User must have been authenticated
     if not user: return unauthenticated()
@@ -711,7 +747,7 @@ def _do_login_user(user, next, remember_me=False):
             and not current_app.user_manager.enable_login_without_confirm_email \
             and not user.has_confirmed_email():
         url = url_for('user.resend_confirm_email')
-        flash(_('Your email address has not yet been confirmed. Check your email Inbox and Spam folders for the confirmation email or <a href="%(url)s">Re-send confirmation email</a>.', url=url), 'error')
+        flash(Markup(_('Your email address has not yet been confirmed. Check your email Inbox and Spam folders for the confirmation email or <a href="%(url)s" class="alert-link">re-send confirmation email</a>.', url=url)), 'error')
         return redirect(url_for('user.login'))
 
     # Use Flask-Login to sign in user
@@ -725,6 +761,8 @@ def _do_login_user(user, next, remember_me=False):
     flash(_('You have signed in successfully.'), 'success')
 
     # Redirect to 'next' URL
+    # return render_template('index.html')
+    print('in', next)
     return redirect(next)
 
 

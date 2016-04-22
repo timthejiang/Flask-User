@@ -58,6 +58,7 @@ class UserManager(object):
                 add_email_form=forms.AddEmailForm,
                 change_password_form=forms.ChangePasswordForm,
                 change_username_form=forms.ChangeUsernameForm,
+                change_profile_form=forms.ChangeProfileForm,
                 forgot_password_form=forms.ForgotPasswordForm,
                 login_form=forms.LoginForm,
                 register_form=forms.RegisterForm,
@@ -99,6 +100,7 @@ class UserManager(object):
         self.add_email_form = add_email_form
         self.change_password_form = change_password_form
         self.change_username_form = change_username_form
+        self.change_profile_form = change_profile_form
         self.forgot_password_form = forgot_password_form
         self.login_form = login_form
         self.register_form = register_form
